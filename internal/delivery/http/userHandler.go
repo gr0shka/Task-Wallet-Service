@@ -13,6 +13,19 @@ type UserHandler struct {
 }
 
 func NewUserHandler(sv domain.UserService) *UserHandler {
+	handler := &UserHandler{sv: sv}
+
+	http.HandleFunc("/", handler.DepositHandler)
+	return handler
+}
+
+func (u *UserHandler) StartListen() error {
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (u *UserHandler) DepositHandler(w http.ResponseWriter, r *http.Request) {
