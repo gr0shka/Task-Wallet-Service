@@ -19,5 +19,5 @@ type UserRepository interface {
 }
 
 type UserService interface {
-	Deposit(ctx context.Context, userID int64, amount float64) (User, error)
+	Deposit(ctx context.Context, userID int64, amount int64) (User, error)
 }
