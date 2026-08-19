@@ -2,24 +2,32 @@ package http
 
 import (
 	"Task-Wallet-Service/internal/domain"
-	"context"
-	"fmt"
+	"encoding/json"
+	"errors"
+	"log"
 	"net/http"
-	"strconv"
 )
 
 type UserHandler struct {
 	sv domain.UserService
 }
 
+type DepositRequest struct {
+	UserId int64 `json:"user_id"`
+	Amount int64 `json:"amount"`
+}
+
 func NewUserHandler(sv domain.UserService) *UserHandler {
 	handler := &UserHandler{sv: sv}
 
-	http.HandleFunc("/", handler.DepositHandler)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/wallet/deposit", handler.DepositHandler)
 	return handler
 }
 
 func (u *UserHandler) StartListen() error {
+	log.Println("Starting HTTP server on port 8080")
+
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		return err
@@ -29,30 +37,29 @@ func (u *UserHandler) StartListen() error {
 }
 
 func (u *UserHandler) DepositHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req DepositRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	updatedUser, err := u.sv.Deposit(r.Context(), req.UserId, req.Amount)
+	if err != nil {
+		if errors.Is(err, domain.ErrUserNotFound) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-
-	id, err := strconv.ParseInt(r.FormValue("id"), 10, 64)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	amount, err := strconv.ParseFloat(r.FormValue("amount"), 64)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	user, err := u.sv.Deposit(context.Background(), id, amount)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("%d", user)))
-	return
+	_ = json.NewEncoder(w).Encode(updatedUser)
 }
