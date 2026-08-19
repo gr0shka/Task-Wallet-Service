@@ -4,7 +4,6 @@ import (
 	"Task-Wallet-Service/internal/domain"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 )
 
@@ -18,22 +17,7 @@ type DepositRequest struct {
 }
 
 func NewUserHandler(sv domain.UserService) *UserHandler {
-	handler := &UserHandler{sv: sv}
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/wallet/deposit", handler.DepositHandler)
-	return handler
-}
-
-func (u *UserHandler) StartListen() error {
-	log.Println("Starting HTTP server on port 8080")
-
-	err := http.ListenAndServe(":8080", nil)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return &UserHandler{sv: sv}
 }
 
 func (u *UserHandler) DepositHandler(w http.ResponseWriter, r *http.Request) {
