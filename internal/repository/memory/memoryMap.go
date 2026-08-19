@@ -26,24 +26,25 @@ func (u *InMemoryUserRepository) AddUser(ctx context.Context, user *domain.User)
 	return nil
 }
 
-func (u *InMemoryUserRepository) GetByID(id int64) (*domain.User, error) {
+func (u *InMemoryUserRepository) GetByID(ctx context.Context, id int64) (domain.User, error) {
 	u.mut.RLock()
 	defer u.mut.RUnlock()
 
 	if v, ok := u.mp[id]; ok {
-		return v, nil
+		return *v, nil
 	}
 
-	return nil, domain.ErrUserNotFound
+	return domain.User{}, domain.ErrUserNotFound
 }
 
-func (u *InMemoryUserRepository) UpdateBalance(id int64, balance int64) error {
+func (u *InMemoryUserRepository) UpdateBalance(ctx context.Context, id int64, balance int64) error {
 	u.mut.Lock()
 	defer u.mut.Unlock()
 
-	if _, ok := u.mp[id]; ok {
-		u.mp[id].Balance = balance
+	if _, ok := u.mp[id]; !ok {
+		return domain.ErrUserNotFound
 	}
+	u.mp[id].Balance = balance
 
-	return domain.ErrUserNotFound
+	return nil
 }

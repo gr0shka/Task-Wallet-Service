@@ -14,8 +14,8 @@ type User struct {
 }
 
 type UserRepository interface {
-	GetByID(id int64) (*User, error)
-	UpdateBalance(id int64, balance int64) error
+	GetByID(ctx context.Context, id int64) (User, error)
+	UpdateBalance(ctx context.Context, id int64, balance int64) error
 }
 
 type UserService interface {

@@ -6,6 +6,8 @@ import (
 	repository "Task-Wallet-Service/internal/repository/memory"
 	service "Task-Wallet-Service/internal/service"
 	"context"
+	"log"
+	"net/http"
 )
 
 func main() {
@@ -15,5 +17,8 @@ func main() {
 	sv := service.NewUserService(rep)
 	sr := server.NewUserHandler(sv)
 
-	sr.StartListen()
+	mux := http.NewServeMux()
+	mux.HandleFunc("/wallet/deposit", sr.DepositHandler)
+
+	log.Fatal(http.ListenAndServe(":8080", mux))
 }

@@ -22,16 +22,18 @@ func (u *UserService) Deposit(ctx context.Context, userID int64, amount int64) (
 	case <-ctx.Done():
 		return domain.User{}, domain.ContextErr
 	default:
-		err := u.rep.UpdateBalance(userID, amount)
+		v, err := u.rep.GetByID(ctx, userID)
 		if err != nil {
 			return domain.User{}, err
 		}
 
-		v, err := u.rep.GetByID(userID)
+		newBalance := v.Balance + amount
+
+		err = u.rep.UpdateBalance(ctx, userID, newBalance)
 		if err != nil {
 			return domain.User{}, err
 		}
-		
-		return *v, nil
+
+		return v, nil
 	}
 }
