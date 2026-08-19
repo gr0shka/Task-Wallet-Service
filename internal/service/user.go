@@ -34,6 +34,6 @@ func (u *UserService) Deposit(ctx context.Context, userID int64, amount int64) (
 			return domain.User{}, err
 		}
 
-		return v, nil
+		return domain.User{v.ID, newBalance}, nil
 	}
 }
