@@ -9,7 +9,7 @@ import (
 )
 
 type UserHandler struct {
-	sv domain.UserService
+	sv domain.WalletUsecase
 }
 
 type DepositRequest struct {
@@ -17,23 +17,17 @@ type DepositRequest struct {
 	Amount int64 `json:"amount"`
 }
 
-func NewUserHandler(sv domain.UserService) *UserHandler {
-	handler := &UserHandler{sv: sv}
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/wallet/deposit", handler.DepositHandler)
-	return handler
+func NewUserHandler(sv domain.WalletUsecase) *UserHandler {
+	return &UserHandler{sv: sv}
 }
 
-func (u *UserHandler) StartListen() error {
+func (u *UserHandler) RegisterRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("/wallet/deposit", u.DepositHandler)
+}
+
+func (u *UserHandler) StartListen(mux *http.ServeMux) error {
 	log.Println("Starting HTTP server on port 8080")
-
-	err := http.ListenAndServe(":8080", nil)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return http.ListenAndServe(":8080", mux)
 }
 
 func (u *UserHandler) DepositHandler(w http.ResponseWriter, r *http.Request) {

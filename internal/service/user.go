@@ -20,18 +20,18 @@ func (u *UserService) Deposit(ctx context.Context, userID int64, amount int64) (
 
 	select {
 	case <-ctx.Done():
-		return domain.User{}, domain.ContextErr
+		return domain.User{}, ctx.Err()
 	default:
-		err := u.rep.UpdateBalance(userID, amount)
+		user, err := u.rep.GetByID(userID)
 		if err != nil {
 			return domain.User{}, err
 		}
 
-		v, err := u.rep.GetByID(userID)
+		updatedUser, err := u.rep.UpdateBalance(userID, user.Balance+amount)
 		if err != nil {
 			return domain.User{}, err
 		}
-		
-		return *v, nil
+
+		return updatedUser, nil
 	}
 }

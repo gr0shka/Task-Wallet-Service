@@ -14,10 +14,10 @@ type User struct {
 }
 
 type UserRepository interface {
-	GetByID(id int64) (*User, error)
-	UpdateBalance(id int64, balance int64) error
+	GetByID(id int64) (User, error)
+	UpdateBalance(id int64, balance int64) (User, error)
 }
 
-type UserService interface {
+type WalletUsecase interface {
 	Deposit(ctx context.Context, userID int64, amount int64) (User, error)
 }

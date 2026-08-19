@@ -4,16 +4,19 @@ import (
 	server "Task-Wallet-Service/internal/delivery/http"
 	"Task-Wallet-Service/internal/domain"
 	repository "Task-Wallet-Service/internal/repository/memory"
-	service "Task-Wallet-Service/internal/service"
+	"Task-Wallet-Service/internal/usecase"
 	"context"
+	"net/http"
 )
 
 func main() {
 	rep := repository.NewInMemoryUserRepository()
 	rep.AddUser(context.Background(), &domain.User{1, 1000})
 
-	sv := service.NewUserService(rep)
-	sr := server.NewUserHandler(sv)
+	walletUsecase := usecase.NewWalletUsecase(rep)
+	sr := server.NewUserHandler(walletUsecase)
+	mux := http.NewServeMux()
+	sr.RegisterRoutes(mux)
 
-	sr.StartListen()
+	_ = sr.StartListen(mux)
 }

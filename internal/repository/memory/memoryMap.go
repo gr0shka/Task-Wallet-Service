@@ -7,26 +7,39 @@ import (
 )
 
 type InMemoryUserRepository struct {
-	mp  map[int64]*domain.User
+	mp  map[int64]domain.User
 	mut sync.RWMutex
 }
 
 func NewInMemoryUserRepository() *InMemoryUserRepository {
 	return &InMemoryUserRepository{
-		mp:  make(map[int64]*domain.User),
+		mp:  make(map[int64]domain.User),
 		mut: sync.RWMutex{},
 	}
+}
+
+func NewInMemoryUserRepositoryWithUsers(users []domain.User) *InMemoryUserRepository {
+	rep := &InMemoryUserRepository{
+		mp:  make(map[int64]domain.User),
+		mut: sync.RWMutex{},
+	}
+
+	for _, user := range users {
+		rep.mp[user.ID] = user
+	}
+
+	return rep
 }
 
 func (u *InMemoryUserRepository) AddUser(ctx context.Context, user *domain.User) error {
 	u.mut.Lock()
 	defer u.mut.Unlock()
 
-	u.mp[user.ID] = user
+	u.mp[user.ID] = *user
 	return nil
 }
 
-func (u *InMemoryUserRepository) GetByID(id int64) (*domain.User, error) {
+func (u *InMemoryUserRepository) GetByID(id int64) (domain.User, error) {
 	u.mut.RLock()
 	defer u.mut.RUnlock()
 
@@ -34,16 +47,20 @@ func (u *InMemoryUserRepository) GetByID(id int64) (*domain.User, error) {
 		return v, nil
 	}
 
-	return nil, domain.ErrUserNotFound
+	return domain.User{}, domain.ErrUserNotFound
 }
 
-func (u *InMemoryUserRepository) UpdateBalance(id int64, balance int64) error {
+func (u *InMemoryUserRepository) UpdateBalance(id int64, balance int64) (domain.User, error) {
 	u.mut.Lock()
 	defer u.mut.Unlock()
 
-	if _, ok := u.mp[id]; ok {
-		u.mp[id].Balance = balance
+	user, ok := u.mp[id]
+	if !ok {
+		return domain.User{}, domain.ErrUserNotFound
 	}
 
-	return domain.ErrUserNotFound
+	user.Balance = balance
+	u.mp[id] = user
+
+	return user, nil
 }
